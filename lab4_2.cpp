@@ -1,83 +1,76 @@
 #include <iostream>
-#include <map>
 #include <string>
+using namespace std;
 
-class AssocArray {
+class NumberWords {
 private:
-    std::map<int, std::string> assocMap;
+    int* keys;
+    string* values;
+    int size;
+    int count;
     int codeError;
 
 public:
-    AssocArray() : codeError(0) {}
-
-    void add(int number, const std::string& word) {
-        assocMap[number] = word;
+    NumberWords(int maxSize = 100) : size(maxSize), count(0), codeError(0) {
+        keys = new int[size];
+        values = new string[size];
     }
 
-    std::string operator[](int number) {
-        if (assocMap.find(number) != assocMap.end()) {
+    ~NumberWords() {
+        delete[] keys;
+        delete[] values;
+    }
+
+    void addAssociation(int number, const string& word) {
+        if (count < size) {
+            keys[count] = number;
+            values[count] = word;
+            count++;
             codeError = 0;
-            return assocMap[number];
         } else {
-            codeError = 1;
-            return "Невідомо";
+            codeError = -2; // масив повний
         }
     }
 
-    std::string operator()(int number) {
-        return (*this)[number];
+    string operator[](int number) {
+        for (int i = 0; i < count; ++i) {
+            if (keys[i] == number) {
+                codeError = 0;
+                return values[i];
+            }
+        }
+        codeError = -1;
+        return "Невідомо";
     }
 
-    int getCodeError() const {
-        return codeError;
-    }
+    int getErrorCode() const { return codeError; }
 
-    const std::map<int, std::string>& getMap() const {
-        return assocMap;
-    }
-
-    void readFromStream(std::istream& in) {
-        int number;
-        std::string word;
-        std::cout << "Введіть число та його назву (Ctrl+D для завершення):\n";
-        while (in >> number >> word) {
-            assocMap[number] = word;
+    void printAll() const {
+        cout << "Список чисел від 1 до 100:\n";
+        for (int i = 0; i < count; ++i) {
+            cout << keys[i] << " = " << values[i] << "\n";
         }
     }
 };
 
-// Оператор виводу поза класом
-std::ostream& operator<<(std::ostream& out, const AssocArray& a) {
-    for (const auto& pair : a.getMap()) {
-        out << pair.first << " = " << pair.second << '\n';
-    }
-    return out;
-}
+// Генерація чисел від 1 до 100 з українським записом
+NumberWords createNumberWordAssoc() {
+    NumberWords nw;
 
-// Оператор вводу поза класом
-std::istream& operator>>(std::istream& in, AssocArray& a) {
-    a.readFromStream(in);
-    return in;
-}
-
-// Функція створення наповненого асоціативного масиву
-AssocArray createNumberWordAssoc() {
-    AssocArray arr;
-
-    std::string ones[] = {
+    string ones[] = {
         "", "один", "два", "три", "чотири", "п’ять", "шість", "сім", "вісім", "дев’ять"
     };
-    std::string teens[] = {
+    string teens[] = {
         "десять", "одинадцять", "дванадцять", "тринадцять", "чотирнадцять",
         "п’ятнадцять", "шістнадцять", "сімнадцять", "вісімнадцять", "дев’ятнадцять"
     };
-    std::string tens[] = {
+    string tens[] = {
         "", "", "двадцять", "тридцять", "сорок", "п’ятдесят",
         "шістдесят", "сімдесят", "вісімдесят", "дев’яносто"
     };
 
     for (int i = 1; i <= 100; ++i) {
-        std::string word;
+        string word;
         if (i == 100) {
             word = "сто";
         } else if (i >= 10 && i < 20) {
@@ -91,31 +84,27 @@ AssocArray createNumberWordAssoc() {
                 word += ones[o];
             }
         }
-        arr.add(i, word);
+        nw.addAssociation(i, word);
     }
 
-    return arr;
+    return nw;
 }
 
-// Головна функція
 int main() {
-    AssocArray dict = createNumberWordAssoc();
+    NumberWords dict = createNumberWordAssoc();
 
-    std::cout << "Асоціативний масив чисел:\n";
-    std::cout << dict;
+    dict.printAll();
 
     int query;
-    std::cout << "\nВведіть число для пошуку (1-100): ";
-    std::cin >> query;
+    cout << "\nВведіть число (1-100): ";
+    cin >> query;
 
-    std::string word = dict(query);
-
-    if (dict.getCodeError() == 0) {
-        std::cout << "Число " << query << " прописом: " << word << '\n';
+    string result = dict[query];
+    if (dict.getErrorCode() == 0) {
+        cout << "Число " << query << " прописом: " << result << "\n";
     } else {
-        std::cout << "Помилка: число не знайдено.\n";
+        cout << "Помилка: число не знайдено.\n";
     }
 
     return 0;
 }
-
